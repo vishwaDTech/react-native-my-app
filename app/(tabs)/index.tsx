@@ -74,6 +74,15 @@ export default function HomeScreen() {
           <ThemedText type="defaultSemiBold">app-example</ThemedText>.
         </ThemedText>
       </ThemedView>
+      <ThemedView style={styles.stepContainer}>
+        <ThemedText type="subtitle">Step 3: Check out the Todo App</ThemedText>
+        <ThemedText>
+          I've added a new tab for you! Tap the <ThemedText type="defaultSemiBold">Tasks</ThemedText> icon in the bottom bar to see the Todo app in action, or click the link below:
+        </ThemedText>
+        <Link href="/todo" style={{ marginTop: 10 }}>
+          <ThemedText type="link">Go to Tasks →</ThemedText>
+        </Link>
+      </ThemedView>
     </ParallaxScrollView>
   );
 }
