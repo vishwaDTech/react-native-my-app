@@ -29,7 +29,11 @@ export default function RegisterScreen() {
     setLoading(false);
 
     if (result.success) {
-      router.replace('/(tabs)');
+      Alert.alert(
+        'Success', 
+        'Account created successfully! Please login with your credentials.',
+        [{ text: 'OK', onPress: () => router.replace('/(auth)/login') }]
+      );
     } else {
       Alert.alert('Registration Failed', result.message);
     }
