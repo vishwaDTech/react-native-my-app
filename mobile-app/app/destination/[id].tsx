@@ -14,6 +14,7 @@ export default function DestinationDetailsScreen() {
   const { id } = useLocalSearchParams();
   const [destination, setDestination] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [bookingLoading, setBookingLoading] = useState(false);
   const colorScheme = useColorScheme() ?? 'light';
   const router = useRouter();
 
@@ -30,6 +31,22 @@ export default function DestinationDetailsScreen() {
       Alert.alert('Error', 'Could not load destination details.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleBook = async () => {
+    setBookingLoading(true);
+    try {
+      await axios.post(`${API_URL}/bookings`, { destinationId: id });
+      Alert.alert(
+        'Success!', 
+        'Your trip has been booked successfully. You can view it in your bookings.',
+        [{ text: 'OK', onPress: () => router.push('/(tabs)') }]
+      );
+    } catch (error: any) {
+      Alert.alert('Booking Failed', error.response?.data?.message || 'Something went wrong');
+    } finally {
+      setBookingLoading(false);
     }
   };
 
@@ -135,8 +152,16 @@ export default function DestinationDetailsScreen() {
           <ThemedText style={styles.bottomPriceLabel}>Total Price</ThemedText>
           <ThemedText style={styles.bottomPriceValue}>${destination.price}</ThemedText>
         </View>
-        <TouchableOpacity style={styles.bookBtn}>
-          <ThemedText style={styles.bookBtnText}>Book Now</ThemedText>
+        <TouchableOpacity 
+          style={styles.bookBtn} 
+          onPress={handleBook}
+          disabled={bookingLoading}
+        >
+          {bookingLoading ? (
+            <ActivityIndicator color="#FFF" />
+          ) : (
+            <ThemedText style={styles.bookBtnText}>Book Now</ThemedText>
+          )}
         </TouchableOpacity>
       </View>
     </ThemedView>

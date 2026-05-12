@@ -5,6 +5,7 @@ import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import UserManagement from './pages/UserManagement';
 import Destinations from './pages/Destinations';
+import Bookings from './pages/Bookings';
 
 const PrivateRoute = ({ children }) => {
   const { user, loading } = useAuth();
@@ -59,7 +60,7 @@ function App() {
           <Route path="/bookings" element={
             <PrivateRoute>
               <Layout>
-                <div className="p-8"><h1 className="text-3xl font-bold">Bookings Management (Coming Soon)</h1></div>
+                <Bookings />
               </Layout>
             </PrivateRoute>
           } />

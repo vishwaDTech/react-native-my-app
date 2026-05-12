@@ -21,6 +21,7 @@ app.use(cors());
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/users', require('./routes/users'));
 app.use('/api/destinations', require('./routes/destinations'));
+app.use('/api/bookings', require('./routes/bookings'));
 
 app.get('/', (req, res) => {
     res.send('API is running...');
