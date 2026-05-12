@@ -1,11 +1,12 @@
-import React, { useState } from 'react';
-import { StyleSheet, View, TextInput, ScrollView, TouchableOpacity, FlatList, Image } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { StyleSheet, View, TextInput, ScrollView, TouchableOpacity, FlatList, Image, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { IconSymbol } from '@/components/ui/icon-symbol';
+import axios from 'axios';
 
 const CATEGORIES = [
   { id: '1', name: 'Beach', icon: 'beach-access' },
@@ -15,54 +16,29 @@ const CATEGORIES = [
   { id: '5', name: 'Desert', icon: 'wb-sunny' },
 ];
 
-const POPULAR_DESTINATIONS = [
-  {
-    id: '1',
-    name: 'Bora Bora',
-    location: 'French Polynesia',
-    price: '$1200',
-    rating: '4.9',
-    image: require('@/assets/images/tropical_beach.png'),
-  },
-  {
-    id: '2',
-    name: 'Swiss Alps',
-    location: 'Switzerland',
-    price: '$950',
-    rating: '4.8',
-    image: require('@/assets/images/snowy_mountain.png'),
-  },
-  {
-    id: '3',
-    name: 'Tokyo',
-    location: 'Japan',
-    price: '$800',
-    rating: '4.7',
-    image: require('@/assets/images/vibrant_city.png'),
-  },
-];
-
-const RECOMMENDED_PLACES = [
-  {
-    id: '1',
-    name: 'Santorini',
-    location: 'Greece',
-    rating: '4.9',
-    image: 'https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?auto=format&fit=crop&w=400&q=80',
-  },
-  {
-    id: '2',
-    name: 'Bali',
-    location: 'Indonesia',
-    rating: '4.8',
-    image: 'https://images.unsplash.com/photo-1537996194471-e657df975ab4?auto=format&fit=crop&w=400&q=80',
-  },
-];
+const API_URL = 'http://10.0.2.2:5000/api'; // Use your machine's IP for physical devices
 
 export default function DiscoverScreen() {
+  const [destinations, setDestinations] = useState([]);
+  const [loading, setLoading] = useState(true);
   const colorScheme = useColorScheme() ?? 'light';
   const [selectedCategory, setSelectedCategory] = useState('1');
   const router = useRouter();
+
+  useEffect(() => {
+    fetchDestinations();
+  }, []);
+
+  const fetchDestinations = async () => {
+    try {
+      const response = await axios.get(`${API_URL}/destinations`);
+      setDestinations(response.data.data);
+    } catch (error) {
+      console.error('Error fetching destinations:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const renderCategory = ({ item }: { item: typeof CATEGORIES[0] }) => (
     <TouchableOpacity
@@ -86,13 +62,19 @@ export default function DiscoverScreen() {
     </TouchableOpacity>
   );
 
-  const renderDestination = ({ item }: { item: typeof POPULAR_DESTINATIONS[0] }) => (
-    <TouchableOpacity style={styles.destinationCard} onPress={() => router.push(`/destination/${item.id}`)}>
-
-      <Image source={item.image} style={styles.destinationImage} />
+  const renderDestination = ({ item }: { item: any }) => (
+    <TouchableOpacity style={styles.destinationCard} onPress={() => router.push(`/destination/${item._id}`)}>
+      <Image 
+        source={{ 
+          uri: item.image?.startsWith('http') 
+            ? item.image 
+            : 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=400&q=80' 
+        }} 
+        style={styles.destinationImage} 
+      />
       <View style={styles.ratingBadge}>
         <IconSymbol name="star" size={12} color="#FFBE0B" />
-        <ThemedText style={styles.ratingText}>{item.rating}</ThemedText>
+        <ThemedText style={styles.ratingText}>{item.rating || '4.5'}</ThemedText>
       </View>
       <View style={styles.destinationInfo}>
         <ThemedText type="defaultSemiBold" style={styles.destinationName}>{item.name}</ThemedText>
@@ -101,21 +83,27 @@ export default function DiscoverScreen() {
           <ThemedText style={styles.locationText}>{item.location}</ThemedText>
         </View>
         <View style={styles.priceContainer}>
-          <ThemedText style={styles.priceText}>{item.price}</ThemedText>
+          <ThemedText style={styles.priceText}>${item.price}</ThemedText>
           <ThemedText style={styles.priceSubtext}>/person</ThemedText>
         </View>
       </View>
     </TouchableOpacity>
   );
 
-  const renderRecommended = (item: typeof RECOMMENDED_PLACES[0]) => (
+  const renderRecommended = (item: any) => (
     <TouchableOpacity 
-      key={item.id} 
+      key={item._id} 
       style={[styles.recommendedCard, { backgroundColor: Colors[colorScheme].muted }]}
-      onPress={() => router.push(`/destination/${item.id}`)}
+      onPress={() => router.push(`/destination/${item._id}`)}
     >
-
-      <Image source={{ uri: item.image }} style={styles.recommendedImage} />
+      <Image 
+        source={{ 
+          uri: item.image?.startsWith('http') 
+            ? item.image 
+            : 'https://images.unsplash.com/photo-1537996194471-e657df975ab4?auto=format&fit=crop&w=400&q=80' 
+        }} 
+        style={styles.recommendedImage} 
+      />
       <View style={styles.recommendedInfo}>
         <ThemedText type="defaultSemiBold">{item.name}</ThemedText>
         <View style={styles.locationContainer}>
@@ -125,7 +113,7 @@ export default function DiscoverScreen() {
       </View>
       <View style={styles.recommendedRating}>
         <IconSymbol name="star" size={14} color="#FFBE0B" />
-        <ThemedText style={styles.ratingText}>{item.rating}</ThemedText>
+        <ThemedText style={styles.ratingText}>{item.rating || '4.5'}</ThemedText>
       </View>
     </TouchableOpacity>
   );
@@ -172,14 +160,18 @@ export default function DiscoverScreen() {
               <ThemedText style={{ color: Colors[colorScheme].tint }}>See All</ThemedText>
             </TouchableOpacity>
           </View>
-          <FlatList
-            data={POPULAR_DESTINATIONS}
-            renderItem={renderDestination}
-            keyExtractor={(item) => item.id}
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.destinationsList}
-          />
+          {loading ? (
+            <ActivityIndicator size="large" color={Colors[colorScheme].tint} style={{ marginVertical: 20 }} />
+          ) : (
+            <FlatList
+              data={destinations}
+              renderItem={renderDestination}
+              keyExtractor={(item) => item._id}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.destinationsList}
+            />
+          )}
         </View>
 
         <View style={styles.section}>
@@ -190,7 +182,7 @@ export default function DiscoverScreen() {
             </TouchableOpacity>
           </View>
           <View style={styles.recommendedList}>
-            {RECOMMENDED_PLACES.map(renderRecommended)}
+            {destinations.slice(0, 3).map(renderRecommended)}
           </View>
         </View>
         

@@ -1,167 +1,143 @@
-import React from 'react';
-import { StyleSheet, View, Image, ScrollView, TouchableOpacity, Dimensions, Platform } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { StyleSheet, View, Image, ScrollView, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { IconSymbol } from '@/components/ui/icon-symbol';
-import { useFavorites } from '@/context/FavoritesContext';
+import axios from 'axios';
 
-const { width } = Dimensions.get('window');
-
-
-// Mock data for demonstration - in a real app this would come from an API based on the ID
-const DESTINATION_DETAILS = {
-  '1': {
-    name: 'Bora Bora',
-    location: 'French Polynesia',
-    price: '$1200',
-    rating: '4.9',
-    reviews: '1.2k reviews',
-    description: 'Bora Bora is a small South Pacific island northwest of Tahiti in French Polynesia. Surrounded by sand-fringed motus (islets) and a turquoise lagoon protected by a coral reef, it’s known for its scuba diving and luxury resorts where some guest quarters are perched over the water on stilts.',
-    image: require('@/assets/images/tropical_beach.png'),
-  },
-  '2': {
-    name: 'Swiss Alps',
-    location: 'Switzerland',
-    price: '$950',
-    rating: '4.8',
-    reviews: '850 reviews',
-    description: 'The Swiss Alps are a major mountain range in Switzerland. They are known for their stunning scenery, world-class skiing, and charming alpine villages. Whether you are looking for adventure or relaxation, the Swiss Alps have something for everyone.',
-    image: require('@/assets/images/snowy_mountain.png'),
-  },
-  '3': {
-    name: 'Tokyo',
-    location: 'Japan',
-    price: '$800',
-    rating: '4.7',
-    reviews: '2.5k reviews',
-    description: 'Tokyo, Japan’s busy capital, mixes the ultramodern and the traditional, from neon-lit skyscrapers to historic temples. The opulent Meiji Shinto Shrine is known for its towering gate and surrounding woods.',
-    image: require('@/assets/images/vibrant_city.png'),
-  },
-};
+const API_URL = 'http://10.0.2.2:5000/api';
 
 export default function DestinationDetailsScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
-  const router = useRouter();
+  const { id } = useLocalSearchParams();
+  const [destination, setDestination] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
   const colorScheme = useColorScheme() ?? 'light';
-  const { isFavorite, toggleFavorite } = useFavorites();
-  
-  const destination = DESTINATION_DETAILS[id as keyof typeof DESTINATION_DETAILS] || DESTINATION_DETAILS['1'];
-  const favorited = isFavorite(id || '1');
+  const router = useRouter();
+
+  useEffect(() => {
+    fetchDestinationDetails();
+  }, [id]);
+
+  const fetchDestinationDetails = async () => {
+    try {
+      const response = await axios.get(`${API_URL}/destinations/${id}`);
+      setDestination(response.data.data);
+    } catch (error) {
+      console.error('Error fetching destination details:', error);
+      Alert.alert('Error', 'Could not load destination details.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <ThemedView style={styles.centerContainer}>
+        <ActivityIndicator size="large" color={Colors[colorScheme].tint} />
+      </ThemedView>
+    );
+  }
+
+  if (!destination) {
+    return (
+      <ThemedView style={styles.centerContainer}>
+        <ThemedText>Destination not found</ThemedText>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+          <ThemedText style={{ color: Colors[colorScheme].tint }}>Go Back</ThemedText>
+        </TouchableOpacity>
+      </ThemedView>
+    );
+  }
 
   return (
     <ThemedView style={styles.container}>
-      <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Header Image */}
+      <ScrollView bounces={false} showsVerticalScrollIndicator={false}>
+        {/* Hero Image */}
         <View style={styles.imageContainer}>
-          <Image source={destination.image} style={styles.headerImage} />
-          <View style={styles.headerOverlay}>
-            <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-              <IconSymbol name="chevron.left" size={28} color="#FFF" />
-            </TouchableOpacity>
-            <TouchableOpacity 
-              style={[styles.favButton, favorited && { backgroundColor: 'rgba(255, 59, 48, 0.2)' }]} 
-              onPress={() => toggleFavorite(id || '1')}
-            >
-              <IconSymbol name="heart.fill" size={24} color={favorited ? '#FF3B30' : '#FFF'} />
-            </TouchableOpacity>
-          </View>
+          <Image 
+            source={{ 
+              uri: destination.image?.startsWith('http') 
+                ? destination.image 
+                : 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80' 
+            }} 
+            style={styles.heroImage} 
+          />
+          <TouchableOpacity 
+            style={styles.headerBtn} 
+            onPress={() => router.back()}
+          >
+            <IconSymbol name="chevron.left" size={24} color="#FFF" />
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={[styles.headerBtn, { right: 20 }]}
+          >
+            <IconSymbol name="heart" size={24} color="#FFF" />
+          </TouchableOpacity>
         </View>
 
-
         {/* Content */}
-        <View style={[styles.content, { backgroundColor: Colors[colorScheme].background }]}>
-          <View style={styles.indicator} />
-          
-          <View style={styles.mainInfo}>
-            <View>
-              <ThemedText type="title" style={styles.name}>{destination.name}</ThemedText>
-              <View style={styles.locationRow}>
+        <View style={styles.contentCard}>
+          <View style={styles.titleRow}>
+            <View className="flex-1">
+              <ThemedText type="title" style={styles.title}>{destination.name}</ThemedText>
+              <View style={styles.locationContainer}>
                 <IconSymbol name="location-on" size={16} color={Colors[colorScheme].tint} />
                 <ThemedText style={styles.locationText}>{destination.location}</ThemedText>
               </View>
             </View>
             <View style={styles.ratingBox}>
               <IconSymbol name="star" size={16} color="#FFBE0B" />
-              <ThemedText style={styles.ratingText}>{destination.rating}</ThemedText>
+              <ThemedText style={styles.ratingText}>{destination.rating || '4.5'}</ThemedText>
             </View>
           </View>
 
-          <View style={[styles.statsRow, { borderBottomColor: Colors[colorScheme].border, borderTopColor: Colors[colorScheme].border }]}>
+          {/* Stats Bar */}
+          <View style={styles.statsBar}>
             <View style={styles.statItem}>
-              <ThemedText style={styles.statLabel}>Duration</ThemedText>
-              <ThemedText type="defaultSemiBold">5 Days</ThemedText>
-            </View>
-            <View style={styles.statItem}>
-              <ThemedText style={styles.statLabel}>Distance</ThemedText>
-              <ThemedText type="defaultSemiBold">1.2k km</ThemedText>
-            </View>
-            <View style={styles.statItem}>
-              <ThemedText style={styles.statLabel}>Temp</ThemedText>
-              <ThemedText type="defaultSemiBold">24°C</ThemedText>
-            </View>
-          </View>
-
-          <View style={styles.section}>
-            <ThemedText type="subtitle" style={styles.sectionTitle}>Description</ThemedText>
-            <ThemedText style={styles.descriptionText}>{destination.description}</ThemedText>
-          </View>
-
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <ThemedText type="subtitle" style={styles.sectionTitle}>Location Map</ThemedText>
-              <TouchableOpacity>
-                <ThemedText style={{ color: Colors[colorScheme].tint }}>View on Map</ThemedText>
-              </TouchableOpacity>
-            </View>
-            <View style={[styles.mapPlaceholder, { backgroundColor: Colors[colorScheme].muted }]}>
-              <IconSymbol name="location-on" size={40} color={Colors[colorScheme].tint} />
-              <ThemedText style={{ opacity: 0.5, marginTop: 10 }}>Map View Placeholder</ThemedText>
-            </View>
-          </View>
-
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <ThemedText type="subtitle" style={styles.sectionTitle}>Reviews ({destination.reviews})</ThemedText>
-              <TouchableOpacity>
-                <ThemedText style={{ color: Colors[colorScheme].tint }}>See All</ThemedText>
-              </TouchableOpacity>
-            </View>
-            {/* Simple Review Placeholder */}
-            <View style={[styles.reviewItem, { backgroundColor: Colors[colorScheme].muted }]}>
-              <View style={styles.reviewHeader}>
-                <View style={styles.reviewUser}>
-                  <View style={styles.avatarSmall} />
-                  <ThemedText type="defaultSemiBold">Alex Smith</ThemedText>
-                </View>
-                <ThemedText style={styles.reviewDate}>2 days ago</ThemedText>
+              <View style={styles.statIcon}>
+                <IconSymbol name="clock" size={20} color={Colors[colorScheme].tint} />
               </View>
-              <ThemedText style={styles.reviewText}>Amazing experience! The views were absolutely breathtaking. Highly recommend visiting during sunset.</ThemedText>
+              <ThemedText style={styles.statLabel}>Duration</ThemedText>
+              <ThemedText style={styles.statValue}>{destination.duration}</ThemedText>
+            </View>
+            <View style={styles.statItem}>
+              <View style={styles.statIcon}>
+                <IconSymbol name="terrain" size={20} color={Colors[colorScheme].tint} />
+              </View>
+              <ThemedText style={styles.statLabel}>Category</ThemedText>
+              <ThemedText style={styles.statValue}>{destination.category}</ThemedText>
+            </View>
+            <View style={styles.statItem}>
+              <View style={styles.statIcon}>
+                <IconSymbol name="payments" size={20} color={Colors[colorScheme].tint} />
+              </View>
+              <ThemedText style={styles.statLabel}>Price</ThemedText>
+              <ThemedText style={styles.statValue}>${destination.price}</ThemedText>
             </View>
           </View>
 
-          <View style={{ height: 120 }} />
+          <View style={styles.descriptionSection}>
+            <ThemedText type="subtitle" style={styles.subtitle}>Description</ThemedText>
+            <ThemedText style={styles.descriptionText}>
+              {destination.description}
+            </ThemedText>
+          </View>
         </View>
+        <View style={{ height: 120 }} />
       </ScrollView>
 
-      {/* Sticky Bottom Bar */}
+      {/* Bottom Action Bar */}
       <View style={[styles.bottomBar, { backgroundColor: Colors[colorScheme].background, borderTopColor: Colors[colorScheme].border }]}>
         <View>
-          <ThemedText style={styles.priceLabel}>Total Price</ThemedText>
-          <View style={styles.priceContainer}>
-            <ThemedText style={styles.priceValue}>{destination.price}</ThemedText>
-            <ThemedText style={styles.priceUnit}>/person</ThemedText>
-          </View>
+          <ThemedText style={styles.bottomPriceLabel}>Total Price</ThemedText>
+          <ThemedText style={styles.bottomPriceValue}>${destination.price}</ThemedText>
         </View>
-        <TouchableOpacity 
-          style={[styles.bookButton, { backgroundColor: Colors[colorScheme].tint }]}
-          onPress={() => router.push(`/booking/${id}`)}
-        >
-          <ThemedText style={styles.bookButtonText}>Book Now</ThemedText>
+        <TouchableOpacity style={styles.bookBtn}>
+          <ThemedText style={styles.bookBtnText}>Book Now</ThemedText>
         </TouchableOpacity>
-
       </View>
     </ThemedView>
   );
@@ -171,25 +147,24 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  imageContainer: {
-    height: 400,
-    width: '100%',
+  centerContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  headerImage: {
+  imageContainer: {
+    width: '100%',
+    height: 450,
+    position: 'relative',
+  },
+  heroImage: {
     width: '100%',
     height: '100%',
-    resizeMode: 'cover',
   },
-  headerOverlay: {
+  headerBtn: {
     position: 'absolute',
-    top: Platform.OS === 'ios' ? 60 : 40,
-    left: 0,
-    right: 0,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-  },
-  backButton: {
+    top: 60,
+    left: 20,
     width: 44,
     height: 44,
     borderRadius: 22,
@@ -197,131 +172,93 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  favButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: 'rgba(0,0,0,0.3)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  content: {
+  contentCard: {
     flex: 1,
-    marginTop: -30,
-    borderTopLeftRadius: 30,
-    borderTopRightRadius: 30,
-    paddingHorizontal: 24,
-    paddingTop: 20,
+    marginTop: -40,
+    backgroundColor: 'white',
+    borderTopLeftRadius: 40,
+    borderTopRightRadius: 40,
+    padding: 30,
+    minHeight: 500,
   },
-  indicator: {
-    width: 40,
-    height: 5,
-    backgroundColor: '#E2E8F0',
-    borderRadius: 3,
-    alignSelf: 'center',
-    marginBottom: 20,
-  },
-  mainInfo: {
+  titleRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: 20,
+    marginBottom: 25,
   },
-  name: {
+  title: {
     fontSize: 28,
+    marginBottom: 8,
   },
-  locationRow: {
+  locationContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    marginTop: 4,
   },
   locationText: {
-    fontSize: 14,
+    fontSize: 16,
     opacity: 0.6,
   },
   ratingBox: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 190, 11, 0.1)',
+    backgroundColor: '#F8FAFC',
     paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 12,
-    gap: 4,
+    paddingVertical: 8,
+    borderRadius: 16,
+    gap: 6,
   },
   ratingText: {
     fontWeight: 'bold',
-    color: '#FFBE0B',
+    fontSize: 14,
   },
-  statsRow: {
+  statsBar: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingVertical: 20,
-    borderTopWidth: 1,
-    borderBottomWidth: 1,
-    marginBottom: 25,
+    backgroundColor: '#F8FAFC',
+    padding: 20,
+    borderRadius: 24,
+    marginBottom: 30,
   },
   statItem: {
     alignItems: 'center',
+    gap: 4,
   },
-  statLabel: {
-    fontSize: 12,
-    opacity: 0.5,
-    marginBottom: 4,
-  },
-  section: {
-    marginBottom: 25,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  sectionTitle: {
-    fontSize: 18,
-  },
-  descriptionText: {
-    lineHeight: 24,
-    opacity: 0.7,
-  },
-  mapPlaceholder: {
-    height: 180,
-    borderRadius: 20,
+  statIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: '#FFF',
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 5,
+    marginBottom: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    elevation: 2,
   },
-  reviewItem: {
-    padding: 16,
-    borderRadius: 20,
-    marginTop: 8,
-  },
-  reviewHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  reviewUser: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  avatarSmall: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: '#CBD5E1',
-  },
-  reviewDate: {
-    fontSize: 12,
+  statLabel: {
+    fontSize: 10,
     opacity: 0.5,
+    fontWeight: 'bold',
+    textTransform: 'uppercase',
   },
-  reviewText: {
-    fontSize: 14,
-    lineHeight: 20,
+  statValue: {
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  descriptionSection: {
+    gap: 15,
+  },
+  subtitle: {
+    fontSize: 20,
+  },
+  descriptionText: {
+    lineHeight: 26,
     opacity: 0.7,
+    fontSize: 16,
   },
   bottomBar: {
     position: 'absolute',
@@ -329,44 +266,41 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     height: 100,
-    paddingHorizontal: 24,
-    paddingTop: 15,
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    alignItems: 'center',
+    paddingHorizontal: 30,
     borderTopWidth: 1,
-    paddingBottom: Platform.OS === 'ios' ? 30 : 15,
+    paddingBottom: 20,
   },
-  priceLabel: {
+  bottomPriceLabel: {
     fontSize: 12,
-    opacity: 0.6,
+    opacity: 0.5,
+    fontWeight: 'bold',
   },
-  priceContainer: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    gap: 2,
-  },
-  priceValue: {
+  bottomPriceValue: {
     fontSize: 24,
     fontWeight: 'bold',
+    color: '#3A86FF',
   },
-  priceUnit: {
-    fontSize: 14,
-    opacity: 0.6,
-  },
-  bookButton: {
-    paddingHorizontal: 32,
-    paddingVertical: 16,
-    borderRadius: 16,
+  bookBtn: {
+    backgroundColor: '#3A86FF',
+    paddingHorizontal: 40,
+    paddingVertical: 18,
+    borderRadius: 20,
     shadowColor: '#3A86FF',
-    shadowOffset: { width: 0, height: 4 },
+    shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
+    shadowRadius: 20,
+    elevation: 10,
   },
-  bookButtonText: {
+  bookBtnText: {
     color: '#FFF',
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: 'bold',
   },
+  backBtn: {
+    marginTop: 20,
+    padding: 10,
+  }
 });

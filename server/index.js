@@ -19,6 +19,8 @@ app.use(cors());
 
 // Mount routers
 app.use('/api/auth', require('./routes/auth'));
+app.use('/api/users', require('./routes/users'));
+app.use('/api/destinations', require('./routes/destinations'));
 
 app.get('/', (req, res) => {
     res.send('API is running...');
