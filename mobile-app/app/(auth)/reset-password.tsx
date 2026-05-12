@@ -1,36 +1,48 @@
 import React, { useState } from 'react';
-import { StyleSheet, TextInput, TouchableOpacity, View, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
-import { useRouter } from 'expo-router';
+import { StyleSheet, TextInput, TouchableOpacity, View, KeyboardAvoidingView, Platform, ScrollView, Alert, ActivityIndicator } from 'react-native';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/context/AuthContext';
-import { Alert, ActivityIndicator } from 'react-native';
 
-export default function ForgotPasswordScreen() {
-  const [email, setEmail] = useState('');
+export default function ResetPasswordScreen() {
+  const { token: initialToken } = useLocalSearchParams();
+  const [token, setToken] = useState((initialToken as string) || '');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const { forgotPassword } = useAuth();
+  const { resetPassword } = useAuth();
   const colorScheme = useColorScheme() ?? 'light';
   const router = useRouter();
 
   const handleResetPassword = async () => {
-    if (!email) {
-      Alert.alert('Error', 'Please enter your email address');
+    if (!token || !password || !confirmPassword) {
+      Alert.alert('Error', 'Please fill in all fields');
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      Alert.alert('Error', 'Passwords do not match');
+      return;
+    }
+
+    if (password.length < 6) {
+      Alert.alert('Error', 'Password must be at least 6 characters');
       return;
     }
 
     setLoading(true);
-    const result = await forgotPassword(email);
+    const result = await resetPassword(token, password);
     setLoading(false);
 
     if (result.success) {
       Alert.alert(
-        'Email Sent', 
-        result.message || 'Check your email for instructions to reset your password.',
-        [{ text: 'OK', onPress: () => router.back() }]
+        'Success', 
+        'Your password has been reset successfully.',
+        [{ text: 'OK', onPress: () => router.replace('/(tabs)') }]
       );
     } else {
       Alert.alert('Error', result.message);
@@ -50,15 +62,15 @@ export default function ForgotPasswordScreen() {
 
           <View style={styles.header}>
             <View style={styles.iconContainer}>
-              <IconSymbol name="lock.fill" size={40} color={Colors[colorScheme].tint} />
+              <IconSymbol name="lock.rotation" size={40} color={Colors[colorScheme].tint} />
             </View>
-            <ThemedText type="title" style={styles.title}>Forgot Password?</ThemedText>
-            <ThemedText style={styles.subtitle}>Enter your email address and we'll send you a link to reset your password.</ThemedText>
+            <ThemedText type="title" style={styles.title}>Reset Password</ThemedText>
+            <ThemedText style={styles.subtitle}>Enter the reset token and your new password.</ThemedText>
           </View>
 
           <View style={styles.form}>
             <View style={styles.inputContainer}>
-              <ThemedText style={styles.label}>Email</ThemedText>
+              <ThemedText style={styles.label}>Reset Token</ThemedText>
               <TextInput
                 style={[
                   styles.input,
@@ -68,12 +80,49 @@ export default function ForgotPasswordScreen() {
                     borderColor: Colors[colorScheme].border
                   }
                 ]}
-                placeholder="Enter your email"
+                placeholder="Paste the token here"
                 placeholderTextColor={Colors[colorScheme].icon}
-                value={email}
-                onChangeText={setEmail}
-                keyboardType="email-address"
+                value={token}
+                onChangeText={setToken}
                 autoCapitalize="none"
+              />
+            </View>
+
+            <View style={styles.inputContainer}>
+              <ThemedText style={styles.label}>New Password</ThemedText>
+              <TextInput
+                style={[
+                  styles.input,
+                  { 
+                    backgroundColor: Colors[colorScheme].muted,
+                    color: Colors[colorScheme].text,
+                    borderColor: Colors[colorScheme].border
+                  }
+                ]}
+                placeholder="Enter new password"
+                placeholderTextColor={Colors[colorScheme].icon}
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry
+              />
+            </View>
+
+            <View style={styles.inputContainer}>
+              <ThemedText style={styles.label}>Confirm New Password</ThemedText>
+              <TextInput
+                style={[
+                  styles.input,
+                  { 
+                    backgroundColor: Colors[colorScheme].muted,
+                    color: Colors[colorScheme].text,
+                    borderColor: Colors[colorScheme].border
+                  }
+                ]}
+                placeholder="Confirm new password"
+                placeholderTextColor={Colors[colorScheme].icon}
+                value={confirmPassword}
+                onChangeText={setConfirmPassword}
+                secureTextEntry
               />
             </View>
 
@@ -85,17 +134,8 @@ export default function ForgotPasswordScreen() {
               {loading ? (
                 <ActivityIndicator color="#FFF" />
               ) : (
-                <ThemedText style={styles.buttonText}>Send Reset Link</ThemedText>
+                <ThemedText style={styles.buttonText}>Reset Password</ThemedText>
               )}
-            </TouchableOpacity>
-
-            <TouchableOpacity 
-              onPress={() => router.push('/(auth)/reset-password')}
-              style={styles.linkButton}
-            >
-              <ThemedText style={{ color: Colors[colorScheme].tint, textAlign: 'center' }}>
-                Already have a reset token? Click here
-              </ThemedText>
             </TouchableOpacity>
           </View>
         </ThemedView>
@@ -170,8 +210,5 @@ const styles = StyleSheet.create({
     color: '#FFF',
     fontSize: 18,
     fontWeight: 'bold',
-  },
-  linkButton: {
-    marginTop: 15,
   },
 });

@@ -18,6 +18,8 @@ interface AuthContextType {
     loading: boolean;
     login: (email: string, password: string) => Promise<{ success: boolean; message?: string }>;
     register: (name: string, email: string, password: string) => Promise<{ success: boolean; message?: string }>;
+    forgotPassword: (email: string) => Promise<{ success: boolean; message?: string }>;
+    resetPassword: (token: string, password: string) => Promise<{ success: boolean; message?: string }>;
     logout: () => Promise<void>;
 }
 
@@ -27,6 +29,8 @@ const AuthContext = createContext<AuthContextType>({
     loading: true,
     login: async () => ({ success: false }),
     register: async () => ({ success: false }),
+    forgotPassword: async () => ({ success: false }),
+    resetPassword: async () => ({ success: false }),
     logout: async () => {},
 });
 
@@ -93,6 +97,38 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
     };
 
+    const forgotPassword = async (email: string) => {
+        try {
+            const response = await axios.post(`${API_URL}/auth/forgotpassword`, { email });
+            return { success: true, message: response.data.message };
+        } catch (error: any) {
+            return { 
+                success: false, 
+                message: error.response?.data?.message || 'Failed to send reset email.' 
+            };
+        }
+    };
+
+    const resetPassword = async (token: string, password: string) => {
+        try {
+            const response = await axios.put(`${API_URL}/auth/resetpassword/${token}`, { password });
+            const { token: userToken, user } = response.data;
+
+            await SecureStore.setItemAsync('userToken', userToken);
+            await SecureStore.setItemAsync('userData', JSON.stringify(user));
+
+            setToken(userToken);
+            setUser(user);
+            axios.defaults.headers.common['Authorization'] = `Bearer ${userToken}`;
+            return { success: true };
+        } catch (error: any) {
+            return { 
+                success: false, 
+                message: error.response?.data?.message || 'Password reset failed.' 
+            };
+        }
+    };
+
     const logout = async () => {
         await SecureStore.deleteItemAsync('userToken');
         await SecureStore.deleteItemAsync('userData');
@@ -102,7 +138,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     return (
-        <AuthContext.Provider value={{ user, token, loading, login, register, logout }}>
+        <AuthContext.Provider value={{ user, token, loading, login, register, forgotPassword, resetPassword, logout }}>
             {children}
         </AuthContext.Provider>
     );
