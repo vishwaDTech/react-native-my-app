@@ -21,12 +21,14 @@ const API_URL = 'http://10.0.2.2:5000/api'; // Use your machine's IP for physica
 export default function DiscoverScreen() {
   const [destinations, setDestinations] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [unreadCount, setUnreadCount] = useState(0);
   const colorScheme = useColorScheme() ?? 'light';
   const [selectedCategory, setSelectedCategory] = useState('1');
   const router = useRouter();
 
   useEffect(() => {
     fetchDestinations();
+    fetchUnreadCount();
   }, []);
 
   const fetchDestinations = async () => {
@@ -37,6 +39,15 @@ export default function DiscoverScreen() {
       console.error('Error fetching destinations:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchUnreadCount = async () => {
+    try {
+      const response = await axios.get(`${API_URL}/notifications/unread/count`);
+      setUnreadCount(response.data.count);
+    } catch (error) {
+      console.error('Error fetching unread count:', error);
     }
   };
 
@@ -124,8 +135,16 @@ export default function DiscoverScreen() {
         <View style={styles.header}>
           <View style={styles.titleRow}>
             <ThemedText type="title" style={styles.title}>Where to next?</ThemedText>
-            <TouchableOpacity style={[styles.notificationBtn, { borderColor: Colors[colorScheme].border }]}>
+            <TouchableOpacity 
+              style={[styles.notificationBtn, { borderColor: Colors[colorScheme].border }]}
+              onPress={() => router.push('/notifications')}
+            >
               <IconSymbol name="notifications" size={24} color={Colors[colorScheme].text} />
+              {unreadCount > 0 && (
+                <View style={styles.badge}>
+                  <ThemedText style={styles.badgeText}>{unreadCount}</ThemedText>
+                </View>
+              )}
             </TouchableOpacity>
           </View>
           <View style={[styles.searchContainer, { backgroundColor: Colors[colorScheme].muted }]}>
@@ -351,5 +370,24 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
+  },
+  badge: {
+    position: 'absolute',
+    top: -5,
+    right: -5,
+    backgroundColor: '#EF4444',
+    minWidth: 18,
+    height: 18,
+    borderRadius: 9,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 4,
+    borderWidth: 2,
+    borderColor: '#FFF',
+  },
+  badgeText: {
+    color: '#FFF',
+    fontSize: 10,
+    fontWeight: 'bold',
   },
 });

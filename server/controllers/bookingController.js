@@ -1,5 +1,6 @@
 const Booking = require('../models/Booking');
 const Destination = require('../models/Destination');
+const Notification = require('../models/Notification');
 
 // @desc    Create new booking
 // @route   POST /api/bookings
@@ -74,7 +75,17 @@ exports.updateBooking = async (req, res) => {
         booking = await Booking.findByIdAndUpdate(req.params.id, req.body, {
             new: true,
             runValidators: true
-        });
+        }).populate('destination');
+
+        // Create notification for the user
+        if (req.body.status) {
+            await Notification.create({
+                user: booking.user,
+                title: `Booking ${req.body.status}`,
+                message: `Your booking for ${booking.destination.name} has been ${req.body.status.toLowerCase()}.`,
+                type: 'Booking'
+            });
+        }
 
         res.status(200).json({ success: true, data: booking });
     } catch (error) {
