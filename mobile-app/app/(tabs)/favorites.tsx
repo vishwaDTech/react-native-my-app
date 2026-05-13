@@ -7,34 +7,38 @@ import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useFavorites } from '@/context/FavoritesContext';
-import { ALL_DESTINATIONS } from '@/constants/Destinations';
 
 export default function FavoritesScreen() {
   const colorScheme = useColorScheme() ?? 'light';
-  const { favorites } = useFavorites();
+  const { favoriteItems, loading, refreshFavorites } = useFavorites();
   const router = useRouter();
 
-  const favoriteDestinations = ALL_DESTINATIONS.filter((d) => favorites.includes(d.id));
-
-  const renderFavoriteItem = ({ item }: { item: typeof ALL_DESTINATIONS[0] }) => (
+  const renderFavoriteItem = ({ item }: { item: any }) => (
     <TouchableOpacity 
       style={[styles.card, { backgroundColor: Colors[colorScheme].muted }]}
-      onPress={() => router.push(`/destination/${item.id}`)}
+      onPress={() => router.push(`/destination/${item._id}`)}
     >
-      <Image source={item.image} style={styles.image} />
+      <Image 
+        source={{ 
+          uri: item.image?.startsWith('http') 
+            ? item.image 
+            : 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80' 
+        }} 
+        style={styles.image} 
+      />
       <View style={styles.info}>
         <View style={styles.header}>
           <ThemedText type="defaultSemiBold" style={styles.name}>{item.name}</ThemedText>
           <View style={styles.ratingRow}>
             <IconSymbol name="star" size={14} color="#FFBE0B" />
-            <ThemedText style={styles.ratingText}>{item.rating}</ThemedText>
+            <ThemedText style={styles.ratingText}>{item.rating || '4.5'}</ThemedText>
           </View>
         </View>
         <View style={styles.locationRow}>
           <IconSymbol name="location-on" size={14} color={Colors[colorScheme].icon} />
           <ThemedText style={styles.locationText}>{item.location}</ThemedText>
         </View>
-        <ThemedText style={styles.price}>{item.price}<ThemedText style={styles.priceUnit}>/person</ThemedText></ThemedText>
+        <ThemedText style={styles.price}>${item.price}<ThemedText style={styles.priceUnit}>/person</ThemedText></ThemedText>
       </View>
     </TouchableOpacity>
   );
@@ -46,13 +50,15 @@ export default function FavoritesScreen() {
         <ThemedText style={styles.subtitle}>Your saved dream destinations</ThemedText>
       </View>
 
-      {favoriteDestinations.length > 0 ? (
+      {favoriteItems.length > 0 ? (
         <FlatList
-          data={favoriteDestinations}
+          data={favoriteItems}
           renderItem={renderFavoriteItem}
-          keyExtractor={(item) => item.id}
+          keyExtractor={(item) => item._id}
           contentContainerStyle={styles.list}
           showsVerticalScrollIndicator={false}
+          onRefresh={refreshFavorites}
+          refreshing={loading}
         />
       ) : (
         <View style={styles.emptyContainer}>

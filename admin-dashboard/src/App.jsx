@@ -4,6 +4,7 @@ import Sidebar from './components/Sidebar';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import UserManagement from './pages/UserManagement';
+import AdminManagement from './pages/AdminManagement';
 import Destinations from './pages/Destinations';
 import Bookings from './pages/Bookings';
 
@@ -44,6 +45,14 @@ function App() {
             <PrivateRoute>
               <Layout>
                 <UserManagement />
+              </Layout>
+            </PrivateRoute>
+          } />
+
+          <Route path="/admin-management" element={
+            <PrivateRoute>
+              <Layout>
+                <AdminManagement />
               </Layout>
             </PrivateRoute>
           } />

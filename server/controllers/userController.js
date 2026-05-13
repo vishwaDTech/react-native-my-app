@@ -1,4 +1,5 @@
 const User = require('../models/User');
+const Destination = require('../models/Destination');
 
 // @desc    Get all users
 // @route   GET /api/users
@@ -31,6 +32,33 @@ exports.createUser = async (req, res) => {
         res.status(201).json({ success: true, data: user });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+// @desc    Create an admin user
+// @route   POST /api/users/create-admin
+// @access  Private/SuperAdmin
+exports.createAdmin = async (req, res) => {
+    try {
+        const { name, email, password } = req.body;
+
+        // Create user with admin role
+        const user = await User.create({
+            name,
+            email,
+            password,
+            role: 'admin'
+        });
+
+        res.status(201).json({
+            success: true,
+            data: user
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
     }
 };
 
@@ -79,6 +107,59 @@ exports.deleteUser = async (req, res) => {
 
         await user.deleteOne();
         res.status(200).json({ success: true, data: {} });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+// @desc    Toggle favorite destination
+// @route   POST /api/users/favorites/:destinationId
+// @access  Private
+exports.toggleFavorite = async (req, res) => {
+    try {
+        const user = await User.findById(req.user.id);
+        const destination = await Destination.findById(req.params.destinationId);
+
+        if (!destination) {
+            return res.status(404).json({ success: false, message: 'Destination not found' });
+        }
+
+        const isFavorite = user.favorites.includes(req.params.destinationId);
+
+        if (isFavorite) {
+            // Remove from favorites
+            user.favorites = user.favorites.filter(
+                (id) => id.toString() !== req.params.destinationId
+            );
+        } else {
+            // Add to favorites
+            user.favorites.push(req.params.destinationId);
+        }
+
+        await user.save();
+
+        res.status(200).json({
+            success: true,
+            isFavorite: !isFavorite,
+            data: user.favorites
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+// @desc    Get user favorite destinations
+// @route   GET /api/users/favorites
+// @access  Private
+exports.getFavorites = async (req, res) => {
+    try {
+        const user = await User.findById(req.user.id).populate('favorites');
+
+        res.status(200).json({
+            success: true,
+            count: user.favorites.length,
+            data: user.favorites
+        });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
     }

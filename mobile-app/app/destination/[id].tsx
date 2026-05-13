@@ -7,6 +7,7 @@ import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import axios from 'axios';
+import { useFavorites } from '@/context/FavoritesContext';
 
 const API_URL = 'http://10.0.2.2:5000/api';
 
@@ -15,6 +16,7 @@ export default function DestinationDetailsScreen() {
   const [destination, setDestination] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [bookingLoading, setBookingLoading] = useState(false);
+  const { isFavorite, toggleFavorite } = useFavorites();
   const colorScheme = useColorScheme() ?? 'light';
   const router = useRouter();
 
@@ -39,7 +41,7 @@ export default function DestinationDetailsScreen() {
     try {
       await axios.post(`${API_URL}/bookings`, { destinationId: id });
       Alert.alert(
-        'Success!', 
+        'Success!',
         'Your trip has been booked successfully. You can view it in your bookings.',
         [{ text: 'OK', onPress: () => router.push('/(tabs)') }]
       );
@@ -74,24 +76,29 @@ export default function DestinationDetailsScreen() {
       <ScrollView bounces={false} showsVerticalScrollIndicator={false}>
         {/* Hero Image */}
         <View style={styles.imageContainer}>
-          <Image 
-            source={{ 
-              uri: destination.image?.startsWith('http') 
-                ? destination.image 
-                : 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80' 
-            }} 
-            style={styles.heroImage} 
+          <Image
+            source={{
+              uri: destination.image?.startsWith('http')
+                ? destination.image
+                : 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80'
+            }}
+            style={styles.heroImage}
           />
-          <TouchableOpacity 
-            style={styles.headerBtn} 
+          <TouchableOpacity
+            style={[styles.headerBtn, { left: 20 }]}
             onPress={() => router.back()}
           >
             <IconSymbol name="chevron.left" size={24} color="#FFF" />
           </TouchableOpacity>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={[styles.headerBtn, { right: 20 }]}
+            onPress={() => toggleFavorite(id as string)}
           >
-            <IconSymbol name="heart" size={24} color="#FFF" />
+            <IconSymbol
+              name={isFavorite(id as string) ? "heart.fill" : "heart"}
+              size={24}
+              color={isFavorite(id as string) ? "#FF4D6D" : "#FFF"}
+            />
           </TouchableOpacity>
         </View>
 
@@ -152,8 +159,8 @@ export default function DestinationDetailsScreen() {
           <ThemedText style={styles.bottomPriceLabel}>Total Price</ThemedText>
           <ThemedText style={styles.bottomPriceValue}>${destination.price}</ThemedText>
         </View>
-        <TouchableOpacity 
-          style={styles.bookBtn} 
+        <TouchableOpacity
+          style={styles.bookBtn}
           onPress={handleBook}
           disabled={bookingLoading}
         >
@@ -189,7 +196,6 @@ const styles = StyleSheet.create({
   headerBtn: {
     position: 'absolute',
     top: 60,
-    left: 20,
     width: 44,
     height: 44,
     borderRadius: 22,

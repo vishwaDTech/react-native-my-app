@@ -41,7 +41,7 @@ export default function NotificationsScreen() {
   const markAsRead = async (id: string) => {
     try {
       await axios.put(`${API_URL}/notifications/${id}/read`);
-      setNotifications(notifications.map((n: any) => 
+      setNotifications(notifications.map((n: any) =>
         n._id === id ? { ...n, read: true } : n
       ));
     } catch (error) {
@@ -50,9 +50,9 @@ export default function NotificationsScreen() {
   };
 
   const renderNotification = ({ item }: { item: any }) => (
-    <TouchableOpacity 
+    <TouchableOpacity
       style={[
-        styles.notificationCard, 
+        styles.notificationCard,
         { backgroundColor: item.read ? Colors[colorScheme].muted : Colors[colorScheme].tint + '10' }
       ]}
       onPress={() => markAsRead(item._id)}

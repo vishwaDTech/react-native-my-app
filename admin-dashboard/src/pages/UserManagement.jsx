@@ -90,10 +90,10 @@ const UserManagement = () => {
         </div>
         <button 
           onClick={() => setShowAddModal(true)}
-          className="bg-primary hover:bg-primary/90 text-white px-6 py-3 rounded-xl flex items-center gap-2 font-bold transition-all shadow-lg shadow-primary/20"
+          className="bg-primary hover:bg-primary/90 text-white px-6 py-3 rounded-xl flex items-center gap-2 font-bold transition-all shadow-lg shadow-primary/20 cursor-pointer"
         >
-          <UserPlus size={20} />
-          <span>Add New Member</span>
+          <UserPlus size={20} className='text-slate-700'/>
+          <span className='text-slate-700'>Add New Member</span>
         </button>
       </div>
 
@@ -233,13 +233,13 @@ const UserManagement = () => {
                 <button 
                   type="button" 
                   onClick={() => setShowAddModal(false)}
-                  className="flex-1 px-6 py-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-2xl transition-all"
+                  className="flex-1 px-6 py-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-2xl transition-all cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button 
                   type="submit"
-                  className="flex-1 px-6 py-4 bg-primary hover:bg-primary/90 text-white font-bold rounded-2xl transition-all shadow-lg shadow-primary/20"
+                  className="flex-1 px-6 py-4 bg-primary hover:bg-primary/90 text-slate-700 font-bold rounded-2xl transition-all shadow-lg shadow-primary/20 cursor-pointer"
                 >
                   Create Member
                 </button>

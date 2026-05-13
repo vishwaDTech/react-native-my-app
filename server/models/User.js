@@ -28,6 +28,12 @@ const userSchema = new mongoose.Schema({
     },
     resetPasswordToken: String,
     resetPasswordExpire: Date,
+    favorites: [
+        {
+            type: mongoose.Schema.ObjectId,
+            ref: 'Destination'
+        }
+    ],
     createdAt: {
         type: Date,
         default: Date.now

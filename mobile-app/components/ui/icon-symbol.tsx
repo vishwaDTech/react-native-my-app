@@ -21,6 +21,8 @@ const MAPPING = {
   'chevron.right': 'chevron-right',
   'chevron.left': 'chevron-left',
   'heart.fill': 'favorite',
+  'heart': 'favorite-border',
+  'calendar.fill': 'event',
   'person.fill': 'person',
   'magnifyingglass': 'search',
   'lock.fill': 'lock',
@@ -45,6 +47,8 @@ const MAPPING = {
   'help-outline': 'help-outline',
   'logout': 'logout',
   'history': 'history',
+  'clock': 'access-time',
+  'payments': 'payments',
 } satisfies Record<string, ComponentProps<typeof MaterialIcons>['name']>;
 
 

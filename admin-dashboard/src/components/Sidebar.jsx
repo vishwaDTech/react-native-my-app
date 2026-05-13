@@ -16,9 +16,16 @@ const Sidebar = () => {
   const menuItems = [
     { name: 'Dashboard', icon: <LayoutDashboard size={20} />, path: '/' },
     { name: 'User Management', icon: <Users size={20} />, path: '/users' },
-    { name: 'Destinations', icon: <Map size={20} />, path: '/destinations' },
-    { name: 'Bookings', icon: <Calendar size={20} />, path: '/bookings' },
   ];
+
+  if (user?.role === 'superadmin') {
+    menuItems.push({ name: 'Admin Management', icon: <ShieldCheck size={20} />, path: '/admin-management' });
+  }
+
+  menuItems.push(
+    { name: 'Destinations', icon: <Map size={20} />, path: '/destinations' },
+    { name: 'Bookings', icon: <Calendar size={20} />, path: '/bookings' }
+  );
 
   return (
     <aside className="w-64 bg-slate-900 border-r border-slate-800 flex flex-col h-screen sticky top-0">
